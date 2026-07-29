@@ -1,0 +1,30 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 18
+VisualStudioVersion = 18.8.12009.203
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "urlShortener", "urlShortener.csproj", "{1D68BBD8-6032-4614-A725-4B68B3673C4E}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{80275894-B6C4-451D-8C20-6EA11FBE8487}"
+	ProjectSection(SolutionItems) = preProject
+		docker-compose.yml = docker-compose.yml
+	EndProjectSection
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{1D68BBD8-6032-4614-A725-4B68B3673C4E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1D68BBD8-6032-4614-A725-4B68B3673C4E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1D68BBD8-6032-4614-A725-4B68B3673C4E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1D68BBD8-6032-4614-A725-4B68B3673C4E}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {DA25FFD1-83F6-4234-9F57-60729A11E333}
+	EndGlobalSection
+EndGlobal

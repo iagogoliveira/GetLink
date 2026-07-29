@@ -1,0 +1,6 @@
+@urlShortener_HostAddress = http://localhost:5121
+
+GET {{urlShortener_HostAddress}}/urlShortener/
+Accept: application/json
+
+###
