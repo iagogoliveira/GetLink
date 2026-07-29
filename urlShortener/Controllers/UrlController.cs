@@ -32,9 +32,11 @@ namespace urlShortener.Controllers
                 Guid.Parse(userId!)
             );
 
-            return await _requestHandlerService.HandleRequest(
-                () => _urlService.CreateNewUrl(url)
-            );
+            return await _requestHandlerService.HandleRequest(async () =>
+            {
+                var createdUrl = await _urlService.CreateNewUrl(url);
+                return new CreateNewUrlResponseDto { NewUrl = createdUrl.NewUrl };
+            });
         }
 
         [Authorize]
