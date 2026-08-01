@@ -1,0 +1,136 @@
+<p><a routerLink="/painel" class="voltar">&larr; Voltar para minhas URLs</a></p>
+
+@if (carregando()) {
+  <p class="sutil">Carregando...</p>
+} @else if (erro(); as mensagem) {
+  <div class="cartao">
+    <p class="erro" role="alert">{{ mensagem }}</p>
+    <button type="button" class="botao discreto" (click)="carregar()">Tentar de novo</button>
+  </div>
+} @else if (dados(); as url) {
+  <section class="cartao">
+    <header class="cabecalho-secao">
+      <div>
+        <a [href]="url.shortUrl" target="_blank" rel="noopener" class="mono grande">
+          {{ url.shortUrl }}
+        </a>
+        <p class="sutil truncado" [title]="url.originalUrl">aponta para {{ url.originalUrl }}</p>
+      </div>
+      <div class="acoes">
+        <button type="button" class="botao discreto" (click)="alternarEdicao()">
+          {{ editando() ? 'Cancelar' : 'Editar' }}
+        </button>
+        <button type="button" class="botao perigo" (click)="excluir()">Excluir</button>
+      </div>
+    </header>
+
+    @if (editando()) {
+      <form class="form-edicao" [formGroup]="form" (ngSubmit)="salvar()">
+        @if (erroEdicao(); as mensagem) {
+          <p class="erro" role="alert">{{ mensagem }}</p>
+        }
+
+        <label>
+          <span>Destino</span>
+          <input type="text" formControlName="originalUrl" />
+        </label>
+
+        <label>
+          <span>Novo caminho <em class="sutil">(opcional; em branco mantem o atual)</em></span>
+          <input type="text" formControlName="newPath" placeholder="ex: promocao" />
+        </label>
+
+        <button type="submit" class="botao primario" [disabled]="salvando()">
+          {{ salvando() ? 'Salvando...' : 'Salvar' }}
+        </button>
+      </form>
+    }
+  </section>
+
+  <section class="metricas">
+    <div class="cartao metrica">
+      <span class="rotulo">Total de cliques</span>
+      <strong class="valor">{{ url.totalClicks }}</strong>
+    </div>
+    <div class="cartao metrica">
+      <span class="rotulo">Ultimo acesso</span>
+      <strong class="valor pequeno">
+        {{ url.lastClickedAt ? (url.lastClickedAt | date: 'dd/MM/yy HH:mm') : 'nenhum ainda' }}
+      </strong>
+    </div>
+    <div class="cartao metrica">
+      <span class="rotulo">Criada em</span>
+      <strong class="valor pequeno">{{ url.createdAt | date: 'dd/MM/yy' }}</strong>
+    </div>
+  </section>
+
+  @if (url.totalClicks === 0) {
+    <section class="cartao">
+      <h2>Cliques</h2>
+      <p class="sutil">
+        Nenhum acesso registrado ainda. Compartilhe o link e os dados aparecem aqui.
+      </p>
+    </section>
+  } @else {
+    <section class="cartao">
+      <h2>Cliques por dia</h2>
+      <div class="grafico" role="img" aria-label="Grafico de cliques por dia">
+        @for (barra of barras(); track barra.dia) {
+          <div class="coluna" [title]="barra.dia + ': ' + barra.total + ' clique(s)'">
+            <div class="barra" [style.height.%]="barra.altura"></div>
+            <span class="total">{{ barra.total }}</span>
+            <span class="dia">{{ barra.dia | date: 'dd/MM' }}</span>
+          </div>
+        }
+      </div>
+    </section>
+
+    <section class="reparticoes">
+      <div class="cartao">
+        <h2>Navegador</h2>
+        @for (item of url.porNavegador; track item.chave) {
+          <div class="linha-contagem">
+            <span>{{ item.chave }}</span>
+            <span class="numero">{{ item.total }}</span>
+          </div>
+        }
+      </div>
+
+      <div class="cartao">
+        <h2>Dispositivo</h2>
+        @for (item of url.porDispositivo; track item.chave) {
+          <div class="linha-contagem">
+            <span>{{ item.chave }}</span>
+            <span class="numero">{{ item.total }}</span>
+          </div>
+        }
+      </div>
+
+      <div class="cartao">
+        <h2>Sistema</h2>
+        @for (item of url.porSistema; track item.chave) {
+          <div class="linha-contagem">
+            <span>{{ item.chave }}</span>
+            <span class="numero">{{ item.total }}</span>
+          </div>
+        }
+      </div>
+
+      <div class="cartao">
+        <h2>Origem</h2>
+        @for (item of url.porOrigem; track item.chave) {
+          <div class="linha-contagem">
+            <span class="truncado">{{ item.chave }}</span>
+            <span class="numero">{{ item.total }}</span>
+          </div>
+        }
+      </div>
+    </section>
+
+    <p class="sutil rodape-nota">
+      Nao guardamos IP nem user-agent. Navegador, dispositivo e sistema sao
+      categorias derivadas no momento do acesso, e a origem registra apenas o
+      dominio de procedencia.
+    </p>
+  }
+}

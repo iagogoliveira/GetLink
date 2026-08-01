@@ -1,0 +1,402 @@
+/* Tema claro e escuro seguindo a preferencia do sistema. */
+:root {
+  --fundo: #f6f7f9;
+  --fundo-elevado: #ffffff;
+  --borda: #e2e5ea;
+  --texto: #16191d;
+  --texto-sutil: #666e7a;
+  --primaria: #3b5bfd;
+  --primaria-texto: #ffffff;
+  --perigo: #c0392b;
+  --sucesso: #1e8e5a;
+  --raio: 10px;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --fundo: #101317;
+    --fundo-elevado: #181c22;
+    --borda: #2a303a;
+    --texto: #e8eaed;
+    --texto-sutil: #98a1ae;
+    --primaria: #7d93ff;
+    --primaria-texto: #0d1017;
+    --perigo: #ff7a6b;
+    --sucesso: #4ade9a;
+  }
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--fundo);
+  color: var(--texto);
+  font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  font-size: 15px;
+  line-height: 1.5;
+}
+
+h1 {
+  font-size: 1.35rem;
+  margin: 0 0 0.25rem;
+  letter-spacing: -0.02em;
+}
+
+h2 {
+  font-size: 1rem;
+  margin: 0 0 0.75rem;
+  letter-spacing: -0.01em;
+}
+
+a {
+  color: var(--primaria);
+}
+
+.cartao {
+  background: var(--fundo-elevado);
+  border: 1px solid var(--borda);
+  border-radius: var(--raio);
+  padding: 1.25rem;
+}
+
+.tela-centrada {
+  min-height: calc(100vh - 8rem);
+  display: grid;
+  place-items: center;
+}
+
+.form-auth {
+  width: min(24rem, 100%);
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+}
+
+.form-auth header {
+  margin-bottom: 0.25rem;
+}
+
+label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  font-size: 0.85rem;
+  font-weight: 500;
+}
+
+input {
+  font: inherit;
+  padding: 0.6rem 0.7rem;
+  border: 1px solid var(--borda);
+  border-radius: 8px;
+  background: var(--fundo);
+  color: var(--texto);
+  width: 100%;
+}
+
+input:focus-visible {
+  outline: 2px solid var(--primaria);
+  outline-offset: 1px;
+}
+
+.botao {
+  font: inherit;
+  font-weight: 500;
+  padding: 0.55rem 0.9rem;
+  border-radius: 8px;
+  border: 1px solid var(--borda);
+  background: var(--fundo);
+  color: var(--texto);
+  cursor: pointer;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  white-space: nowrap;
+}
+
+.botao:hover:not(:disabled) {
+  border-color: var(--primaria);
+}
+
+.botao:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.botao.primario {
+  background: var(--primaria);
+  border-color: var(--primaria);
+  color: var(--primaria-texto);
+}
+
+.botao.discreto {
+  font-size: 0.85rem;
+  padding: 0.4rem 0.7rem;
+}
+
+.botao.perigo {
+  font-size: 0.85rem;
+  padding: 0.4rem 0.7rem;
+  color: var(--perigo);
+}
+
+.botao.perigo:hover:not(:disabled) {
+  border-color: var(--perigo);
+}
+
+.botao.minusculo {
+  font-size: 0.7rem;
+  padding: 0.15rem 0.4rem;
+  margin-left: 0.4rem;
+  border-radius: 5px;
+}
+
+.sutil {
+  color: var(--texto-sutil);
+  font-size: 0.85rem;
+}
+
+.centro {
+  text-align: center;
+}
+
+.mono {
+  font-family: ui-monospace, 'Cascadia Code', Consolas, monospace;
+  font-size: 0.85rem;
+}
+
+.mono.grande {
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.erro {
+  background: color-mix(in srgb, var(--perigo) 12%, transparent);
+  border: 1px solid color-mix(in srgb, var(--perigo) 35%, transparent);
+  color: var(--perigo);
+  padding: 0.55rem 0.7rem;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  margin: 0;
+}
+
+.aviso {
+  background: color-mix(in srgb, var(--primaria) 12%, transparent);
+  border: 1px solid color-mix(in srgb, var(--primaria) 35%, transparent);
+  padding: 0.55rem 0.7rem;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  margin: 0;
+}
+
+.erro-campo {
+  color: var(--perigo);
+  font-size: 0.75rem;
+  font-weight: 400;
+}
+
+.linha-form {
+  display: flex;
+  gap: 0.6rem;
+  margin-top: 0.75rem;
+}
+
+.linha-form input {
+  flex: 1;
+}
+
+.cabecalho-secao {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 0.75rem;
+}
+
+.cabecalho-secao h2 {
+  margin: 0;
+}
+
+.acoes {
+  display: flex;
+  gap: 0.4rem;
+  align-items: center;
+}
+
+/* Tabelas largas rolam dentro do proprio container, sem empurrar a pagina. */
+.rolagem-horizontal {
+  overflow-x: auto;
+}
+
+.tabela {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+}
+
+.tabela th {
+  text-align: left;
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--texto-sutil);
+  font-weight: 600;
+  padding: 0 0.6rem 0.5rem;
+  border-bottom: 1px solid var(--borda);
+  white-space: nowrap;
+}
+
+.tabela td {
+  padding: 0.65rem 0.6rem;
+  border-bottom: 1px solid var(--borda);
+  vertical-align: middle;
+}
+
+.tabela tr:last-child td {
+  border-bottom: none;
+}
+
+.numero {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.destaque {
+  font-weight: 600;
+}
+
+.truncado {
+  max-width: 16rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.metricas {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr));
+  gap: 1rem;
+}
+
+.metrica {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.metrica .rotulo {
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--texto-sutil);
+  font-weight: 600;
+}
+
+.metrica .valor {
+  font-size: 1.9rem;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.03em;
+}
+
+.metrica .valor.pequeno {
+  font-size: 1rem;
+  font-weight: 500;
+}
+
+/* Grafico em CSS puro: evita somar uma biblioteca so para barras. */
+.grafico {
+  display: flex;
+  align-items: flex-end;
+  gap: 0.4rem;
+  min-height: 9rem;
+  overflow-x: auto;
+  padding-top: 0.5rem;
+}
+
+.grafico .coluna {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.25rem;
+  min-width: 2.4rem;
+  flex: 1;
+  height: 9rem;
+}
+
+.grafico .barra {
+  width: 100%;
+  max-width: 2.5rem;
+  background: var(--primaria);
+  border-radius: 4px 4px 0 0;
+  min-height: 3px;
+}
+
+.grafico .total {
+  font-size: 0.7rem;
+  font-variant-numeric: tabular-nums;
+  order: -1;
+  color: var(--texto-sutil);
+}
+
+.grafico .dia {
+  font-size: 0.65rem;
+  color: var(--texto-sutil);
+  white-space: nowrap;
+}
+
+.reparticoes {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr));
+  gap: 1rem;
+}
+
+.linha-contagem {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.35rem 0;
+  border-bottom: 1px solid var(--borda);
+  font-size: 0.85rem;
+}
+
+.linha-contagem:last-child {
+  border-bottom: none;
+}
+
+.form-edicao {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--borda);
+}
+
+.form-edicao .botao {
+  align-self: flex-start;
+}
+
+.voltar {
+  font-size: 0.85rem;
+  text-decoration: none;
+}
+
+.rodape-nota {
+  margin: 0;
+  font-size: 0.78rem;
+}
+
+@media (max-width: 40rem) {
+  .linha-form {
+    flex-direction: column;
+  }
+
+  .truncado {
+    max-width: 10rem;
+  }
+}

@@ -1,0 +1,40 @@
+<div class="tela-centrada">
+  <form class="cartao form-auth" [formGroup]="form" (ngSubmit)="entrar()">
+    <header>
+      <h1>Entrar</h1>
+      <p class="sutil">Acesse para criar e acompanhar suas URLs.</p>
+    </header>
+
+    @if (sessaoExpirou()) {
+      <p class="aviso" role="status">Sua sessao expirou. Entre novamente.</p>
+    }
+
+    @if (erro(); as mensagem) {
+      <p class="erro" role="alert">{{ mensagem }}</p>
+    }
+
+    <label>
+      <span>Login</span>
+      <input type="text" formControlName="login" autocomplete="username" />
+      @if (form.controls.login.touched && form.controls.login.invalid) {
+        <small class="erro-campo">Informe seu login.</small>
+      }
+    </label>
+
+    <label>
+      <span>Senha</span>
+      <input type="password" formControlName="password" autocomplete="current-password" />
+      @if (form.controls.password.touched && form.controls.password.invalid) {
+        <small class="erro-campo">Informe sua senha.</small>
+      }
+    </label>
+
+    <button type="submit" class="botao primario" [disabled]="enviando()">
+      {{ enviando() ? 'Entrando...' : 'Entrar' }}
+    </button>
+
+    <p class="sutil centro">
+      Nao tem conta? <a routerLink="/cadastro">Cadastre-se</a>
+    </p>
+  </form>
+</div>

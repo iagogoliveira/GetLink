@@ -1,4 +1,4 @@
-﻿namespace urlShortener.Models
+namespace urlShortener.Models
 {
     public class Address(Guid id, string originalUrl, Guid userId)
     {
@@ -6,5 +6,8 @@
         public string OriginalUrl { get; set; } = originalUrl;
         public string NewUrl { get; set; } = string.Empty;
         public Guid UserId { get; set; } = userId;
+        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+
+        public ICollection<Click> Clicks { get; set; } = [];
     }
 }

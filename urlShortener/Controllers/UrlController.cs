@@ -14,10 +14,19 @@ namespace urlShortener.Controllers
 
         private readonly UrlService _urlService;
         private readonly RequestHandlerService _requestHandlerService;
-        public UrlController(UrlService urlService, RequestHandlerService requestHandlerService) 
-        { 
+        private readonly ClickService _clickService;
+        private readonly ILogger<UrlController> _logger;
+
+        public UrlController(
+            UrlService urlService,
+            RequestHandlerService requestHandlerService,
+            ClickService clickService,
+            ILogger<UrlController> logger)
+        {
             _urlService = urlService;
             _requestHandlerService = requestHandlerService;
+            _clickService = clickService;
+            _logger = logger;
         }
 
         // O id do usuario vem sempre do token, nunca do corpo da requisicao.
@@ -70,6 +79,20 @@ namespace urlShortener.Controllers
             if (urlRedirect is null)
             {
                 return NotFound("Url not found.");
+            }
+
+            // Falha na estatistica nao pode custar o redirect ao usuario, que e a
+            // funcao principal do produto. Registra o erro e segue.
+            try
+            {
+                await _clickService.RegistrarClique(
+                    urlRedirect.Id,
+                    Request.Headers.UserAgent.ToString(),
+                    Request.Headers.Referer.ToString());
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Falha ao registrar clique da url {UrlId}.", urlRedirect.Id);
             }
 
             return Redirect(urlRedirect.OriginalUrl);

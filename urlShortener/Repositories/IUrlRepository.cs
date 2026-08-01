@@ -12,5 +12,10 @@ namespace urlShortener.Repositories
         Task<Address> UpdateUrl(Address url);
         Task DeleteUrl(Guid id);
         Task<bool> ExistsAsync(string fullShortUrl);
+
+        Task AddClick(Click click);
+        Task<List<Address>> GetUrlsByUser(Guid userId);
+        Task<List<ClickAggregate>> GetClickAggregatesByUser(Guid userId);
+        Task<List<Click>> GetClicks(Guid addressId);
     }
 }

@@ -1,0 +1,16 @@
+<header class="topo">
+  <a class="marca" routerLink="/painel">encurtador<span>.url</span></a>
+
+  @if (autenticado()) {
+    <nav class="nav-topo">
+      @if (usuario(); as email) {
+        <span class="sutil esconde-mobile">{{ email }}</span>
+      }
+      <button type="button" class="botao discreto" (click)="sair()">Sair</button>
+    </nav>
+  }
+</header>
+
+<main class="conteudo">
+  <router-outlet />
+</main>

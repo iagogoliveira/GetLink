@@ -21,11 +21,27 @@ builder.Services.AddDbContext<AppDbContext>(options =>
             sqlOptions.MigrationsHistoryTable("__MigrationsHistory_UrlShortener");
         }));
 
+// CORS: origens vem da configuracao. Lista vazia nao libera ninguem.
+var origensPermitidas = builder.Configuration
+    .GetSection("Cors:AllowedOrigins").Get<string[]>() ?? [];
+
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("Default", policy =>
+    {
+        policy.WithOrigins(origensPermitidas)
+              .AllowAnyHeader()
+              .AllowAnyMethod();
+    });
+});
+
 // Dependency Injection
 builder.Services.AddScoped<IUrlRepository, UrlRepository>();
 builder.Services.AddScoped<UrlGeneratorService>();
 builder.Services.AddScoped<UrlValidatorService>();
 builder.Services.AddScoped<UrlService>();
+builder.Services.AddScoped<ClickMetadataService>();
+builder.Services.AddScoped<ClickService>();
 // Request handler used by controllers to centralize error handling
 builder.Services.AddScoped<RequestHandlerService>();
 
@@ -119,6 +135,8 @@ if (!builder.Configuration.GetValue<bool>("DOTNET_RUNNING_IN_CONTAINER"))
 {
     app.UseHttpsRedirection();
 }
+
+app.UseCors("Default");
 
 app.UseAuthentication();
 app.UseAuthorization();

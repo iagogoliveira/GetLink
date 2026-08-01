@@ -1,0 +1,90 @@
+<section class="cartao">
+  <h1>Encurtar URL</h1>
+
+  <form class="linha-form" [formGroup]="form" (ngSubmit)="criar()">
+    <input
+      type="text"
+      formControlName="originalUrl"
+      placeholder="cole aqui o link, ex: exemplo.com/pagina"
+      aria-label="URL para encurtar"
+    />
+    <button type="submit" class="botao primario" [disabled]="criando()">
+      {{ criando() ? 'Encurtando...' : 'Encurtar' }}
+    </button>
+  </form>
+
+  @if (form.controls.originalUrl.touched && form.controls.originalUrl.invalid) {
+    <small class="erro-campo">Informe uma URL.</small>
+  }
+
+  @if (erro(); as mensagem) {
+    <p class="erro" role="alert">{{ mensagem }}</p>
+  }
+</section>
+
+<section class="cartao">
+  <header class="cabecalho-secao">
+    <h2>Minhas URLs</h2>
+    <button type="button" class="botao discreto" (click)="carregar()" [disabled]="carregando()">
+      Atualizar
+    </button>
+  </header>
+
+  @if (erroLista(); as mensagem) {
+    <p class="erro" role="alert">{{ mensagem }}</p>
+  }
+
+  @if (carregando()) {
+    <p class="sutil">Carregando...</p>
+  } @else if (lista().length === 0) {
+    <p class="sutil">
+      Voce ainda nao encurtou nenhuma URL. Cole um link acima para comecar.
+    </p>
+  } @else {
+    <div class="rolagem-horizontal">
+      <table class="tabela">
+        <thead>
+          <tr>
+            <th>Link curto</th>
+            <th>Destino</th>
+            <th class="numero">Cliques</th>
+            <th>Ultimo acesso</th>
+            <th>Criada em</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (url of lista(); track url.id) {
+            <tr>
+              <td>
+                <a [href]="url.shortUrl" target="_blank" rel="noopener" class="mono">
+                  {{ url.shortUrl }}
+                </a>
+                <button type="button" class="botao minusculo" (click)="copiar(url)">
+                  {{ copiada() === url.id ? 'copiado' : 'copiar' }}
+                </button>
+              </td>
+              <td class="truncado" [title]="url.originalUrl">{{ url.originalUrl }}</td>
+              <td class="numero destaque">{{ url.totalClicks }}</td>
+              <td class="sutil">
+                {{ url.lastClickedAt ? (url.lastClickedAt | date: 'dd/MM/yy HH:mm') : '--' }}
+              </td>
+              <td class="sutil">{{ url.createdAt | date: 'dd/MM/yy' }}</td>
+              <td class="acoes">
+                <a class="botao discreto" [routerLink]="['/url', url.id]">Cliques</a>
+                <button
+                  type="button"
+                  class="botao perigo"
+                  (click)="excluir(url)"
+                  [disabled]="excluindo() === url.id"
+                >
+                  {{ excluindo() === url.id ? '...' : 'Excluir' }}
+                </button>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  }
+</section>
