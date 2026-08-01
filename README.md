@@ -1,159 +1,198 @@
-# URL Shortener Solution
+# URL Shortener
 
-A simple URL shortener built with ASP.NET Core (.NET 10), EF Core, and SQL Server. The solution has two services:
+A URL shortener with authentication and click analytics, built with ASP.NET Core (.NET 10), EF Core, SQL Server and Angular 22.
 
-- **AuthService** – handles user registration, login, and JWT token generation.
-- **UrlShortener** – creates, updates, deletes, and redirects short URLs. Write operations require a valid JWT; redirection is public.
+The project is split into three independently deployable pieces:
+
+```
+encurtadorUrl/
+├── AuthService/      :7001   user registration, login, JWT issuing
+├── urlShortener/     :7000   short URLs, redirect, click analytics
+├── frontend/         :4200   Angular SPA
+├── docker-compose.yml        orchestrates the services + SQL Server
+└── .env                      local secrets (git-ignored)
+```
+
+Each service has its own solution (`AuthService.sln`, `urlShortener.sln`) and its own test project. They share no project references — only the JWT contract.
+
+## Features
+
+**Accounts**
+- Registration with unique login and e-mail (enforced by a DB index, not just a check)
+- Passwords hashed with PBKDF2-HMAC-SHA256 at 600,000 iterations, per-password salt, constant-time comparison
+- The stored hash carries its own iteration count, so the cost can be raised later without invalidating existing passwords
+- Login responses take the same time whether or not the account exists, so the endpoint can't be used to enumerate users
+- Rate limited to 5 attempts per minute per IP
+- Inactive accounts (`Active = false`) cannot log in
+
+**Short URLs**
+- Create, update (including a custom path), delete, and public redirect
+- URLs without a scheme are normalized on write (`exemplo.com` → `https://exemplo.com`), so the redirect always leaves the shortener's domain
+- Every write verifies ownership against the JWT — another user's URL responds `404`, identical to a URL that doesn't exist, so IDs can't be enumerated
+
+**Click analytics**
+- Every redirect is recorded with a timestamp
+- Clicks per day, and breakdowns by browser, device, operating system and traffic source
+- Analytics failures never break the redirect
+
+### A note on what is stored
+
+Click tracking stores **derived metadata only**. The IP and user-agent are read from the request, used to determine device type, browser and OS, and then discarded — they are never persisted. The referrer is reduced to its host (`www.google.com`), never the full URL, since origin paths often carry search terms and identifiers.
+
+The intent is to keep the analytics useful without putting personal data (LGPD/GDPR) in the database. A row looks like this:
+
+```
+ClickedAt                   | RefererHost    | DeviceType | Browser | OperatingSystem
+2026-08-01 08:28:21.0004952 | www.google.com | Desktop    | Firefox | Windows
+```
+
+Browser/OS detection is heuristic by nature — user-agent strings are deliberately misleading for historical compatibility reasons. Treat it as a trend, not an exact count.
 
 ## Requirements
 
 - .NET 10 SDK
-- Docker & Docker Compose (for containerized deployment)
-- SQL Server (local, remote, or containerized)
-- (Optional) `dotnet-ef` for running migrations locally:
+- Node.js 20+ and npm (for the frontend)
+- SQL Server — a local instance, or the containerized one from `docker-compose.yml`
+- `dotnet-ef` for migrations:
   ```
   dotnet tool install --global dotnet-ef
   ```
 
-## Configuration
+## Running locally
 
-Both services read their settings from `appsettings.json`:
+### 1. Set the JWT secret
 
-- **JwtSettings** – `SecretKey`, `Issuer`, `Audience`. AuthService and UrlShortener must use the **same** values so tokens issued by AuthService are accepted by UrlShortener.
-- **ConnectionStrings:DefaultConnection** – points to your SQL Server instance.
+The secret is **not** in `appsettings.json`. Both services must sign and validate with the **same** value — the signature is symmetric. Generate one and store it via user-secrets:
 
-⚠️ Change the JWT secret key and the SQL `sa` password before deploying to production. Don't commit real secrets — use environment variables or a secrets manager instead.
+```bash
+# any random string with 32+ characters
+openssl rand -base64 48
 
-## Running Locally
+cd AuthService  && dotnet user-secrets set "JwtSettings:SecretKey" "<your-secret>"
+cd urlShortener && dotnet user-secrets set "JwtSettings:SecretKey" "<same-secret>"
+```
 
-1. Restore and build from the solution root:
-   ```
-   dotnet restore
-   dotnet build
-   ```
-2. Set your connection string in `appsettings.json` (or via environment variables), then apply migrations for each project:
-   ```
-   dotnet ef database update --project AuthService --startup-project AuthService
-   dotnet ef database update --project UrlShortener --startup-project UrlShortener
-   ```
-3. Run each service:
-   ```
-   dotnet run --project AuthService
-   dotnet run --project UrlShortener
-   ```
-4. Swagger UI (development only):
-   - AuthService: `https://localhost:7001/swagger`
-   - UrlShortener: `https://localhost:7000/swagger`
+Both services refuse to start if the secret is missing or shorter than 32 characters — a loud failure at startup instead of confusing signature errors later.
+
+### 2. Create the databases
+
+The default connection strings point at `localhost` using Windows authentication, one database per service:
+
+```bash
+cd AuthService  && dotnet ef database update
+cd urlShortener && dotnet ef database update
+```
+
+If you're using the SQL Server container instead of a local instance, override the connection string first — `Trusted_Connection` is Windows authentication and won't work against it:
+
+```bash
+docker compose up -d sqlserver
+export ConnectionStrings__DefaultConnection="Server=localhost,1433;Database=AuthServiceDb;User Id=sa;Password=<sa-password>;TrustServerCertificate=True;"
+```
+
+### 3. Start the services
+
+Use the `http` profile — it avoids the self-signed certificate warning in the browser:
+
+```bash
+cd AuthService  && dotnet run --launch-profile http    # :7001
+cd urlShortener && dotnet run --launch-profile http    # :7000
+```
+
+Swagger is available in development at `/swagger` on both.
+
+### 4. Start the frontend
+
+```bash
+cd frontend
+npm install
+npm start          # :4200
+```
+
+Open http://localhost:4200, create an account, and shorten a URL.
+
+> **Heads-up:** `UrlShortener:BaseUrl` defaults to `https://localhost:7000`, so generated links use `https`. If you run the services with the `http` profile, clicking a link from the UI will fail on the certificate. For local testing, set `UrlShortener:BaseUrl` to `http://localhost:7000` in `appsettings.Development.json`.
+
+### CORS
+
+Both services only accept the origins listed under `Cors:AllowedOrigins`. Development already allows `http://localhost:4200`. The production `appsettings.json` ships with an **empty list**, which allows nothing — fill it in before deploying.
 
 ## Running with Docker
 
-Each project includes a Dockerfile. Example docker-compose setup running SQL Server plus both APIs:
+`docker-compose.yml` reads secrets from a `.env` file at the repository root (git-ignored):
 
-```yaml
-version: '3.8'
-services:
-  db:
-    image: mcr.microsoft.com/mssql/server:2022-latest
-    environment:
-      SA_PASSWORD: "YourStrongPassword123"
-      ACCEPT_EULA: "Y"
-    ports:
-      - "1433:1433"
-
-  authservice:
-    build: ./AuthService
-    depends_on:
-      - db
-    environment:
-      ConnectionStrings__DefaultConnection: "Server=db;Database=AuthDb;User Id=sa;Password=YourStrongPassword123;TrustServerCertificate=True;"
-      ASPNETCORE_URLS: "http://+:8080"
-    ports:
-      - "8081:8080"
-
-  urlshortener:
-    build: ./UrlShortener
-    depends_on:
-      - db
-    environment:
-      ConnectionStrings__DefaultConnection: "Server=db;Database=UrlShortenerDb;User Id=sa;Password=YourStrongPassword123;TrustServerCertificate=True;"
-      UrlShortener__BaseUrl: "http://localhost:8080"
-      ASPNETCORE_URLS: "http://+:8080"
-    ports:
-      - "8080:8080"
+```env
+MSSQL_SA_PASSWORD=<strong password>
+JWT_SECRET=<32+ characters, same for both services>
 ```
 
-Start everything with:
-```
+Then:
+
+```bash
 docker compose up --build -d
 ```
 
-**Note:** Apply EF migrations before running in production — either run `dotnet ef database update` locally against the container's SQL Server, or add `Database.Migrate()` at startup.
+The compose file overrides each service's connection string via environment variables. Migrations are **not** applied automatically — run `dotnet ef database update` against the container, or add `Database.Migrate()` at startup.
 
-## API Endpoints
+## Running the tests
 
-### AuthService
+```bash
+cd AuthService  && dotnet test     # password hashing, login, timing, duplicates
+cd urlShortener && dotnet test     # ownership, URL normalization, click metadata
+cd frontend     && npm test        # watch mode; add -- --watch=false for a single run
+```
 
-| Method | Route | Description |
-|---|---|---|
-| POST | `/Auth/CreateUser` | Create a user. Body: `{ Name, Login, Password, Email }` |
-| POST | `/Auth/Login` | Log in and receive a JWT. Body: `{ Login, Password }` |
+## API
 
-### UrlShortener
+### AuthService — `:7001`
 
 | Method | Route | Auth | Description |
 |---|---|---|---|
-| POST | `/CreateNewUrl` | Required | Body: `{ OriginalUrl }` → returns the shortened URL |
-| PUT | `/UpdateUrl` | Required | Body: `{ Id, OriginalUrl, NewPath? }` |
-| DELETE | `/DeleteUrl` | Required | Body: `{ Id }` |
-| GET | `/{code}` | Public | Redirects to the original URL |
+| POST | `/Auth/CreateUser` | — | `{ name, login, password, email }` |
+| POST | `/Auth/Login` | — | `{ login, password }` → `{ token }`. Rate limited. |
 
-Protected routes require the header:
+### urlShortener — `:7000`
+
+| Method | Route | Auth | Description |
+|---|---|---|---|
+| POST | `/CreateNewUrl` | JWT | `{ originalUrl }` → `{ newUrl }` |
+| PUT | `/UpdateUrl` | JWT | `{ id, originalUrl, newPath? }` — empty `newPath` keeps the current one |
+| DELETE | `/DeleteUrl` | JWT | `{ id }` |
+| GET | `/api/urls` | JWT | The caller's URLs with click totals |
+| GET | `/api/urls/{id}/stats` | JWT | Full click breakdown for one URL |
+| GET | `/{code}` | — | Redirects (302) and records the click |
+
+Management endpoints live under `/api/` deliberately: the root is the short-code namespace, and any literal route added there would burn that code forever.
+
+Protected routes require:
+
 ```
 Authorization: Bearer <JWT>
 ```
 
-The JWT must include the user's ID as the `NameIdentifier` claim.
+The user ID is always taken from the token's `NameIdentifier` claim, never from the request body.
 
-## Example Requests
+### Response codes worth knowing
 
-**Create a user:**
-```
-POST /Auth/CreateUser
-{
-  "name": "User Name",
-  "login": "user1",
-  "password": "secret",
-  "email": "user@example.com"
-}
-```
+| Code | When |
+|---|---|
+| `401` | Missing, invalid or expired token |
+| `404` | URL not found **or** owned by someone else — deliberately indistinguishable |
+| `429` | Login rate limit exceeded |
 
-**Log in:**
-```
-POST /Auth/Login
-{
-  "login": "user1",
-  "password": "secret"
-}
-```
-Returns the JWT in the response body.
+## Production checklist
 
-**Shorten a URL (with token):**
-```
-POST /CreateNewUrl
-Authorization: Bearer <token>
-{
-  "OriginalUrl": "https://example.com/some/long/path"
-}
-```
-
-## Production Checklist
-
-- [ ] Replace the JWT secret key with a strong, securely stored value
-- [ ] Replace the SQL `sa` password / use a dedicated low-privilege DB user
-- [ ] Store secrets in environment variables or a secrets manager, not in `appsettings.json`
+- [ ] Provide `JwtSettings:SecretKey` via environment variable or a secrets manager (never `appsettings.json`)
+- [ ] Fill in `Cors:AllowedOrigins` — the default empty list blocks every browser origin
+- [ ] Use a dedicated low-privilege database user instead of `sa`
+- [ ] Set `UrlShortener:BaseUrl` to the real public domain
 - [ ] Enable HTTPS with a valid certificate
+- [ ] Define a retention policy for the `Clicks` table
 
 ## Roadmap
 
-- Automatic DB migration on startup
+- Retention/aggregation policy for old click rows
+- Country breakdown (requires a GeoIP database)
+- RS256 instead of HMAC, so the shortener only needs a public key and the two services stop sharing a secret
+- Automatic migration on startup
 - Role/claims-based authorization
