@@ -16,7 +16,10 @@ namespace AuthService.Services
 
         public async Task<string> GenerateTokenAsync(string userId, string email)
         {
-            var key = Encoding.UTF8.GetBytes(_config["JwtSettings:SecretKey"]);
+            var secret = _config["JwtSettings:SecretKey"]
+                ?? throw new InvalidOperationException("JwtSettings:SecretKey nao configurado.");
+
+            var key = Encoding.UTF8.GetBytes(secret);
             var claims = new[]
             {
                 new Claim(JwtRegisteredClaimNames.Sub, userId),

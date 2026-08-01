@@ -7,7 +7,7 @@ services:
 
     environment:
       ACCEPT_EULA: "Y"
-      MSSQL_SA_PASSWORD: "SuaSenha@123"
+      MSSQL_SA_PASSWORD: ${MSSQL_SA_PASSWORD:?defina MSSQL_SA_PASSWORD no arquivo .env}
 
     ports:
       - "1433:1433"
@@ -28,6 +28,11 @@ services:
     environment:
       ASPNETCORE_ENVIRONMENT: Development
       ASPNETCORE_HTTP_PORTS: 8080
+      # Trusted_Connection e autenticacao do Windows e nao funciona em container Linux,
+      # por isso a string do appsettings e sobrescrita aqui.
+      ConnectionStrings__DefaultConnection: "Server=sqlserver;Database=AuthServiceDb;User Id=sa;Password=${MSSQL_SA_PASSWORD};TrustServerCertificate=True;"
+      # Tem de ser o mesmo segredo do urlshortener: a assinatura do JWT e simetrica.
+      JwtSettings__SecretKey: ${JWT_SECRET:?defina JWT_SECRET no arquivo .env}
 
     depends_on:
       - sqlserver
@@ -45,6 +50,8 @@ services:
     environment:
       ASPNETCORE_ENVIRONMENT: Development
       ASPNETCORE_HTTP_PORTS: 8080
+      ConnectionStrings__DefaultConnection: "Server=sqlserver;Database=UrlShortenerDb;User Id=sa;Password=${MSSQL_SA_PASSWORD};TrustServerCertificate=True;"
+      JwtSettings__SecretKey: ${JWT_SECRET:?defina JWT_SECRET no arquivo .env}
 
     depends_on:
       - sqlserver

@@ -16,11 +16,18 @@ namespace AuthService.Data
         {
             base.OnModelCreating(modelBuilder);
 
-            // Configurações das entidades aqui
-            // Ex:
-            // modelBuilder.Entity<User>()
-            //     .HasIndex(x => x.Email)
-            //     .IsUnique();
+            modelBuilder.Entity<User>(user =>
+            {
+                // Os tamanhos nao sao so higiene: SQL Server nao indexa
+                // nvarchar(max), entao sem eles os indices unicos abaixo falham.
+                user.Property(u => u.Name).HasMaxLength(200);
+                user.Property(u => u.Login).HasMaxLength(100);
+                user.Property(u => u.Email).HasMaxLength(254);
+                user.Property(u => u.Password).HasMaxLength(200);
+
+                user.HasIndex(u => u.Login).IsUnique();
+                user.HasIndex(u => u.Email).IsUnique();
+            });
         }
     }
 }

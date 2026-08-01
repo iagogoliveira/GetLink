@@ -1,0 +1,18 @@
+# Artefatos de build da maquina local nao devem entrar na imagem: incham o
+# contexto e podem conflitar com o restore feito dentro do container.
+bin/
+obj/
+.vs/
+
+# Segredos e configuracao local
+.env
+*.user
+
+# Testes e solution nao entram na imagem de producao
+AuthService.Tests/
+*.sln
+
+# Nao e necessario dentro da imagem
+Dockerfile
+.dockerignore
+README.md
