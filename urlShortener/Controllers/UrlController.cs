@@ -20,16 +20,21 @@ namespace urlShortener.Controllers
             _requestHandlerService = requestHandlerService;
         }
 
+        // O id do usuario vem sempre do token, nunca do corpo da requisicao.
+        private Guid GetAuthenticatedUserId()
+        {
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            return Guid.Parse(userId!);
+        }
+
         [Authorize]
         [HttpPost("CreateNewUrl")]
         public async Task<IActionResult> CreateNewUrl([FromBody] CreateNewUrlDto urlDto)
         {
-            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-
             var url = new Address(
                 Guid.NewGuid(),
                 urlDto.OriginalUrl,
-                Guid.Parse(userId!)
+                GetAuthenticatedUserId()
             );
 
             return await _requestHandlerService.HandleRequest(async () =>
@@ -43,20 +48,29 @@ namespace urlShortener.Controllers
         [HttpPut("UpdateUrl")]
         public async Task<IActionResult> UpdateUrl([FromBody] UpdateUrlDto urlDto)
         {
-            return await _requestHandlerService.HandleRequest(() => _urlService.UpdateUrl(urlDto.Id, urlDto.OriginalUrl, urlDto.NewPath));
+            var userId = GetAuthenticatedUserId();
+
+            return await _requestHandlerService.HandleRequest(() => _urlService.UpdateUrl(urlDto.Id, userId, urlDto.OriginalUrl, urlDto.NewPath));
         }
 
         [Authorize]
         [HttpDelete("DeleteUrl")]
         public async Task<IActionResult> DeleteUrl([FromBody] DeleteUrlDto urlDto)
         {
-            return await _requestHandlerService.HandleRequest(() => _urlService.DeleteUrl(urlDto.Id));
+            var userId = GetAuthenticatedUserId();
+
+            return await _requestHandlerService.HandleRequest(() => _urlService.DeleteUrl(urlDto.Id, userId));
         }
 
         [HttpGet("{code}")]
         public async Task<IActionResult> RedirectUrl(string code)
         {
             var urlRedirect = await _urlService.GetUrlRedirect(code);
+
+            if (urlRedirect is null)
+            {
+                return NotFound("Url not found.");
+            }
 
             return Redirect(urlRedirect.OriginalUrl);
         }

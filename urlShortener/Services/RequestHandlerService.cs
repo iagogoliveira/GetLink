@@ -11,6 +11,10 @@ namespace urlShortener.Services
                 var result = await action();
                 return new OkObjectResult(result);
             }
+            catch (KeyNotFoundException ex)
+            {
+                return new NotFoundObjectResult(ex.Message);
+            }
             catch (InvalidOperationException ex)
             {
                 return new BadRequestObjectResult(ex.Message);
@@ -32,6 +36,10 @@ namespace urlShortener.Services
             {
                 await action();
                 return new OkResult();
+            }
+            catch (KeyNotFoundException ex)
+            {
+                return new NotFoundObjectResult(ex.Message);
             }
             catch (InvalidOperationException ex)
             {

@@ -12,7 +12,7 @@ using urlShortener.Data;
 namespace urlShortener.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20260728235933_InitialCreate")]
+    [Migration("20260801075613_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />

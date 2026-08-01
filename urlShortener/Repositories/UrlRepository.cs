@@ -21,13 +21,13 @@ namespace urlShortener.Repositories
         }
 
 
-        public async Task<Address> GetUrl(Guid url)
+        public async Task<Address?> GetUrl(Guid url)
         {
             return await _context.Addresses.FindAsync(url);
         }
-        
-        
-        public async Task<Address> GetUrlRedirect(string shortUrl)
+
+
+        public async Task<Address?> GetUrlRedirect(string shortUrl)
         {
             return await _context.Addresses.FirstOrDefaultAsync(_ => _.NewUrl == shortUrl);
         }
@@ -46,7 +46,16 @@ namespace urlShortener.Repositories
 
         public async Task DeleteUrl(Guid id)
         {
-            _context.Addresses.Remove(await GetUrl(id));
+            var url = await GetUrl(id);
+
+            // Idempotente: apagar o que ja nao existe nao e erro. Quem precisa
+            // responder 404 e o servico, que verifica antes por causa do dono.
+            if (url is null)
+            {
+                return;
+            }
+
+            _context.Addresses.Remove(url);
             await _context.SaveChangesAsync();
         }
 

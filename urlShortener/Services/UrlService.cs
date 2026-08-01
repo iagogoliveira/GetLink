@@ -29,6 +29,8 @@ namespace urlShortener.Services
                 throw new InvalidOperationException("Invalid URL.");
             }
 
+            url.OriginalUrl = _urlValidatorService.NormalizeUrl(url.OriginalUrl);
+
             try
             {
                 url.NewUrl = await _urlGeneratorService.GenerateFullUrl();
@@ -41,55 +43,62 @@ namespace urlShortener.Services
                 throw new Exception(ex.Message);
             }
         }
-        public async Task UpdateUrl(Guid id, string originalUrl, string path)
+        public async Task UpdateUrl(Guid id, Guid userId, string originalUrl, string? path)
         {
 
-            if (String.IsNullOrEmpty(originalUrl))
+            if (string.IsNullOrEmpty(originalUrl))
             {
-                throw new InvalidOperationException("Url cannot de null.");
+                throw new InvalidOperationException("Url cannot be null.");
             }
-            try
+
+            if (!_urlValidatorService.CheckValidUrl(originalUrl))
             {
-                var urlObject = GetUrl(id);
-
-                if (urlObject.Result.OriginalUrl != originalUrl)
-                {
-                    urlObject.Result.OriginalUrl = originalUrl;
-
-                }
-
-                if (path != null)
-                {
-                    urlObject.Result.NewUrl = await _urlGeneratorService.GenerateCustomPath(path);
-                }
-
-                await _urlRepository.UpdateUrl(urlObject.Result);
+                throw new InvalidOperationException("Invalid URL.");
             }
-            catch (Exception ex)
+
+            originalUrl = _urlValidatorService.NormalizeUrl(originalUrl);
+
+            var urlObject = await GetUrl(id);
+
+            // Url de outro usuario responde igual a inexistente, para nao revelar quais ids existem.
+            if (urlObject is null || urlObject.UserId != userId)
             {
-                throw new Exception(ex.Message);
+                throw new KeyNotFoundException("Url not found.");
             }
-            
+
+            if (urlObject.OriginalUrl != originalUrl)
+            {
+                urlObject.OriginalUrl = originalUrl;
+
+            }
+
+            if (!string.IsNullOrEmpty(path))
+            {
+                urlObject.NewUrl = await _urlGeneratorService.GenerateCustomPath(path);
+            }
+
+            await _urlRepository.UpdateUrl(urlObject);
         }
-        public async Task<Address> GetUrl(Guid url)
+        public async Task<Address?> GetUrl(Guid url)
         {
             return  await _urlRepository.GetUrl(url);
-        } 
-        public async Task<Address> GetUrlRedirect(string shortUrl)
+        }
+        public async Task<Address?> GetUrlRedirect(string shortUrl)
         {
             var url = _urlGeneratorService.FormatUrl(shortUrl);
             return  await _urlRepository.GetUrlRedirect(url);
         }
-        public async Task DeleteUrl(Guid id)
+        public async Task DeleteUrl(Guid id, Guid userId)
         {
-            try
+            var urlObject = await GetUrl(id);
+
+            // Url de outro usuario responde igual a inexistente, para nao revelar quais ids existem.
+            if (urlObject is null || urlObject.UserId != userId)
             {
-                await _urlRepository.DeleteUrl(id);
+                throw new KeyNotFoundException("Url not found.");
             }
-            catch(Exception ex)
-            {
-                throw new InvalidOperationException("Url not found.");
-            }
+
+            await _urlRepository.DeleteUrl(id);
         }
     }
 }
